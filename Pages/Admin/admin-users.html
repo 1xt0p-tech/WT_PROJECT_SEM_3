@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniSpace - User Activity Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background: #f9f9f9; }
+    .dashboard-section { max-width: 1000px; margin: auto; }
+    .table tr:hover { background-color: #f1f1f1; }
+    .spinner { display: block; text-align: center; padding: 20px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="index.html">A AniSpace</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="browse.html">Browse</a></li>
+          <li class="nav-item"><a class="nav-link" href="reviews.html">Reviews</a></li>
+          <li class="nav-item"><a class="nav-link" href="community.html">Community</a></li>
+          <li class="nav-item"><a class="nav-link" href="signup.html">Sign Up</a></li>
+          <li class="nav-item"><a class="nav-link" href="admin.html">Admin</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-4">
+    <section class="dashboard-section bg-white p-4 rounded shadow">
+      <h2>User Activity Dashboard</h2>
+      <p class="lead">Monitor user interactions with AniSpace (mock data for local testing).</p>
+      <button class="btn btn-danger mb-3" onclick="clearUserActivity()">Clear Activity History</button>
+      <div id="user-activity-table">
+        <div class="spinner"><div class="spinner-border text-primary" role="status"></div></div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="bg-dark text-white text-center py-3">
+    <p><a href="about.html" class="text-white">About</a> | <a href="contact.html" class="text-white">Contact</a> | <a href="index.html" class="text-white">Home</a></p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Mock notification for local execution
+    function notifyCodeExecution() {
+      try {
+        const ip = "Local";
+        const browser = navigator.userAgent || 'Unknown';
+        const page = window.location.pathname;
+        const timestamp = new Date().toISOString();
+        const notifications = JSON.parse(localStorage.getItem('anispace_notifications') || '[]');
+        notifications.push({ ip, browser, page, timestamp });
+        localStorage.setItem('anispace_notifications', JSON.stringify(notifications));
+        console.log('Notification logged locally:', { ip, browser, page, timestamp });
+      } catch (error) {
+        console.error('Error logging notification:', error);
+      }
+    }
+
+    window.onload = notifyCodeExecution;
+
+    // Simple client-side authentication
+    const adminPassword = "anispace2025";
+    const userPassword = prompt("Enter admin password:");
+    if (userPassword !== adminPassword) {
+      alert("Access denied. Incorrect password.");
+      window.location.href = "index.html";
+    }
+
+    function renderUserActivityTable() {
+      // Mock user activity data (update other pages to log real activity)
+      const mockActivity = JSON.parse(localStorage.getItem('anispace_user_activity') || '[]');
+      if (mockActivity.length === 0) {
+        mockActivity.push(
+          { user: "Guest1", action: "Search: Naruto", page: "browse.html", timestamp: new Date().toISOString() },
+          { user: "Guest2", action: "Visited Home", page: "index.html", timestamp: new Date().toISOString() }
+        );
+        localStorage.setItem('anispace_user_activity', JSON.stringify(mockActivity));
+      }
+      const tableContainer = document.getElementById('user-activity-table');
+      if (mockActivity.length === 0) {
+        tableContainer.innerHTML = '<p class="text-center">No user activity recorded.</p>';
+        return;
+      }
+      const table = document.createElement('table');
+      table.className = 'table table-striped table-bordered';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Action</th>
+            <th>Page</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${mockActivity.map(a => `
+            <tr>
+              <td>${a.user}</td>
+              <td>${a.action}</td>
+              <td>${a.page}</td>
+              <td>${a.timestamp}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      `;
+      tableContainer.innerHTML = '';
+      tableContainer.appendChild(table);
+    }
+
+    function clearUserActivity() {
+      if (confirm('Are you sure you want to clear all user activity history?')) {
+        localStorage.removeItem('anispace_user_activity');
+        renderUserActivityTable();
+        alert('User activity history cleared.');
+      }
+    }
+
+    renderUserActivityTable();
+  </script>
+</body>
+</html>

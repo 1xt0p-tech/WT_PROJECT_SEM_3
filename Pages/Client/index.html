@@ -1,0 +1,278 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniSpace - Homepage</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #333; color: white; }
+    header .logo { font-size: 1.5em; font-weight: bold; }
+    header nav a { color: white; margin: 0 15px; text-decoration: none; }
+    header .menu { cursor: pointer; }
+    .hero { text-align: center; padding: 50px 20px; background: linear-gradient(to bottom, #4a90e2, #f0f0f0); }
+    .hero h1 { font-size: 2.5em; margin-bottom: 10px; }
+    .hero h1 span { color: #ff6f61; }
+    .hero p { font-size: 1.2em; color: #333; }
+    .hero .cta button { padding: 10px 20px; margin: 10px; background: #ff6f61; color: white; border: none; cursor: pointer; border-radius: 5px; }
+    .search-section { text-align: center; padding: 20px; }
+    .search-section input { padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 5px; }
+    .search-section button { padding: 10px 20px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .genres { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+    .genres span { padding: 8px 15px; background: #e0e0e0; border-radius: 15px; cursor: pointer; }
+    .genres span:hover { background: #4a90e2; color: white; }
+    .trending, .top-rated, .reviews { padding: 20px; }
+    .trending h2, .top-rated h2, .reviews h2 { font-size: 1.8em; margin-bottom: 10px; }
+    .trending h2 a, .top-rated h2 a { color: #4a90e2; text-decoration: none; font-size: 0.8em; }
+    .carousel { display: flex; overflow-x: auto; gap: 20px; padding: 10px; }
+    .anime-card { text-align: center; min-width: 150px; }
+    .anime-card img { width: 150px; height: 200px; object-fit: cover; border-radius: 5px; }
+    .anime-card h3 { font-size: 1.1em; margin: 10px 0 5px; }
+    .top-rated .anime { display: flex; align-items: center; gap: 15px; padding: 10px; border-bottom: 1px solid #eee; }
+    .top-rated .rank { font-weight: bold; font-size: 1.2em; }
+    .reviews .review { padding: 15px; background: white; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .reviews .stars { color: #f1c40f; }
+    .welcome { text-align: center; padding: 40px 20px; background: #fff; }
+    .welcome button { padding: 10px 20px; margin: 10px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .loading { text-align: center; padding: 20px; color: #666; }
+    footer { text-align: center; padding: 20px; background: #333; color: white; }
+    footer a { color: white; margin: 0 10px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">A AniSpace</div>
+    <nav>
+      <a href="browse.html">Browse</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="community.html">Community</a>
+      <a href="signup.html">Sign Up</a>
+    </nav>
+    <div class="menu">menu</div>
+  </header>
+
+  <div class="container">
+    <section class="hero">
+      <h1>Discover, Rate & Review Your <span>Favorite Anime</span></h1>
+      <p>Join thousands of anime fans sharing reviews, theories, and discovering new series together</p>
+      <div class="cta">
+        <button onclick="location.href='browse.html'">Browse Anime</button>
+        <button onclick="location.href='community.html'">Join the Community</button>
+      </div>
+    </section>
+
+    <section class="search-section">
+      <h2>Search & Explore</h2>
+      <p>Find your next favorite anime or discover hidden gems</p>
+      <div>
+        <input type="text" id="search-input" placeholder="Search for anime...">
+        <button onclick="searchAnime()">search</button>
+      </div>
+      <div class="genres">
+        <span onclick="filterByGenre('action')">Action</span>
+        <span onclick="filterByGenre('romance')">Romance</span>
+        <span onclick="filterByGenre('shounen')">Shounen</span>
+        <span onclick="filterByGenre('slice-of-life')">Slice of Life</span>
+        <span onclick="filterByGenre('fantasy')">Fantasy</span>
+        <span onclick="filterByGenre('thriller')">Thriller</span>
+        <span onclick="filterByGenre('comedy')">Comedy</span>
+        <span onclick="filterByGenre('drama')">Drama</span>
+      </div>
+    </section>
+
+    <section class="trending">
+      <h2>🔥 Trending Anime <a href="browse.html">View All</a></h2>
+      <div class="carousel" id="trending-carousel">
+        <div class="loading">Loading trending anime...</div>
+      </div>
+    </section>
+
+    <section class="reviews">
+      <h2>📝 Latest Reviews & Fan Theories</h2>
+      <div id="reviews-section">
+        <div class="loading">Loading reviews...</div>
+      </div>
+    </section>
+
+    <section class="top-rated">
+      <h2>📊 Top-Rated Anime This Week</h2>
+      <div id="top-rated-section">
+        <div class="loading">Loading top-rated anime...</div>
+      </div>
+    </section>
+
+    <section class="welcome">
+      <h2>👋 Welcome to AniSpace</h2>
+      <p>AniSpace is your ultimate destination for anime discovery, reviews, and community discussions. Join thousands of passionate anime fans who share reviews, theories, and recommendations. Rate your favorite series, discover hidden gems, and connect with fellow otaku from around the world.</p>
+      <div>
+        <button onclick="location.href='signup.html'">Start Your Journey</button>
+        <button onclick="location.href='about.html'">Learn More</button>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p><a href="about.html">About</a> | <a href="contact.html">Contact</a> | <a href="browse.html">Browse</a></p>
+  </footer>
+
+  <script>
+    // Helper function to get English title
+    function getEnglishTitle(anime) {
+      return anime.attributes.titles.en || anime.attributes.canonicalTitle || anime.attributes.titles.en_jp || 'Unknown Title';
+    }
+
+    // Generic function to fetch from Kitsu API
+    async function fetchKitsu(url) {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error('Kitsu API error:', error);
+        return [];
+      }
+    }
+
+    // Render anime cards
+    function renderAnimeCards(containerId, animeList) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      if (animeList.length === 0) {
+        container.innerHTML = '<p>No results found.</p>';
+        return;
+      }
+      animeList.forEach(anime => {
+        const card = document.createElement('div');
+        card.className = 'anime-card';
+        card.innerHTML = `
+          <a href="anime-detail.html?id=${anime.id}">
+            <img src="${anime.attributes.posterImage.medium}" alt="${getEnglishTitle(anime)}">
+            <div>${anime.attributes.averageRating ? (anime.attributes.averageRating / 10).toFixed(1) : 'N/A'}</div>
+            <h3>${getEnglishTitle(anime)}</h3>
+          </a>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render top-rated anime
+    function renderTopRatedAnime(animeList) {
+      const section = document.getElementById('top-rated-section');
+      section.innerHTML = '';
+      if (animeList.length === 0) {
+        section.innerHTML = '<p>Failed to load top-rated anime.</p>';
+        return;
+      }
+      animeList.forEach((anime, index) => {
+        const item = document.createElement('div');
+        item.className = 'anime';
+        item.innerHTML = `
+          <div class="rank">${index + 1}</div>
+          <img src="${anime.attributes.posterImage.tiny}" alt="${getEnglishTitle(anime)}" style="width: 50px; height: 70px;">
+          <div>
+            <h3>${getEnglishTitle(anime)}</h3>
+            <div><span class="stars">★</span> ${anime.attributes.averageRating ? (anime.attributes.averageRating / 10).toFixed(1) : 'N/A'} (${anime.attributes.userCount.toLocaleString()} votes)</div>
+          </div>
+        `;
+        section.appendChild(item);
+      });
+    }
+
+    // Render reviews
+    async function renderReviews() {
+      const staticReviews = [
+        { title: 'Attack on Titan Final Season Analysis', anime: 'Attack on Titan', rating: 5, user: 'AnimeFan2024', text: 'The ending of Attack on Titan brings together years of foreshadowing...' },
+        { title: 'Demon Slayer: Hidden Symbolism Theory', anime: 'Demon Slayer', rating: 5, user: 'MangaReader', text: 'The breathing techniques in Demon Slayer represent more than just combat...' },
+        { title: 'One Piece: The Will of D Explained', anime: 'One Piece', rating: 5, user: 'PirateKing', text: 'After 1000+ chapters, the mystery of the Will of D is finally becoming clear...' }
+      ];
+      const section = document.getElementById('reviews-section');
+      section.innerHTML = '';
+      for (const review of staticReviews) {
+        const data = await fetchKitsu(`https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(review.anime)}&page[limit]=1`);
+        const anime = data[0] || {};
+        const reviewDiv = document.createElement('div');
+        reviewDiv.className = 'review';
+        reviewDiv.innerHTML = `
+          <h3>${review.title}</h3>
+          <p>${anime.attributes ? getEnglishTitle(anime) : review.anime}</p>
+          <div class="stars">${'★'.repeat(review.rating)}</div>
+          <p>by ${review.user}</p>
+          <p>${review.text}</p>
+        `;
+        section.appendChild(reviewDiv);
+      }
+    }
+
+    // Fetch trending anime
+    async function fetchTrendingAnime() {
+      const data = await fetchKitsu('https://kitsu.io/api/edge/trending/anime?limit=6');
+      renderAnimeCards('trending-carousel', data);
+    }
+
+    // Fetch top-rated anime
+    async function fetchTopRatedAnime() {
+      const data = await fetchKitsu('https://kitsu.io/api/edge/anime?sort=-averageRating&limit=4');
+      renderTopRatedAnime(data);
+    }
+
+    // Search anime
+    async function searchAnime() {
+      const query = document.getElementById('search-input').value;
+      if (!query) return;
+      const data = await fetchKitsu(`https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(query)}&page[limit]=6`);
+      renderAnimeCards('trending-carousel', data);
+    }
+
+    // Filter by genre
+    async function filterByGenre(genre) {
+      const data = await fetchKitsu(`https://kitsu.io/api/edge/anime?filter[categories]=${encodeURIComponent(genre)}&page[limit]=6`);
+      renderAnimeCards('trending-carousel', data);
+    }
+
+    // Load data on page load
+    fetchTrendingAnime();
+    fetchTopRatedAnime();
+    renderReviews();
+  </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniSpace - Browse Anime</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #333; color: white; }
+    header .logo { font-size: 1.5em; font-weight: bold; }
+    header nav a { color: white; margin: 0 15px; text-decoration: none; }
+    header .menu { cursor: pointer; }
+    .search-section { text-align: center; padding: 20px; }
+    .search-section input { padding: 10px; width: 300px; border: 1px solid #ccc; border-radius: 5px; }
+    .search-section select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    .search-section button { padding: 10px 20px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .filters { display: flex; justify-content: center; gap: 20px; margin: 20px 0; }
+    .anime-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
+    .anime-card { text-align: center; background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 10px; }
+    .anime-card img { width: 100%; height: 250px; object-fit: cover; border-radius: 5px; }
+    .anime-card h3 { font-size: 1.1em; margin: 10px 0 5px; }
+    .anime-card p { color: #666; margin: 5px 0; }
+    .loading { text-align: center; padding: 20px; color: #666; }
+    footer { text-align: center; padding: 20px; background: #333; color: white; }
+    footer a { color: white; margin: 0 10px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">A AniSpace</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="community.html">Community</a>
+      <a href="signup.html">Sign Up</a>
+    </nav>
+    <div class="menu">menu</div>
+  </header>
+
+  <div class="container">
+    <section class="search-section">
+      <h2>Browse Anime</h2>
+      <div class="filters">
+        <input type="text" id="search-input" placeholder="Search by title...">
+        <select id="genre-filter">
+          <option value="">All Genres</option>
+          <option value="action">Action</option>
+          <option value="romance">Romance</option>
+          <option value="shounen">Shounen</option>
+          <option value="slice-of-life">Slice of Life</option>
+          <option value="fantasy">Fantasy</option>
+          <option value="thriller">Thriller</option>
+          <option value="comedy">Comedy</option>
+          <option value="drama">Drama</option>
+        </select>
+        <select id="year-filter">
+          <option value="">All Years</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
+        <select id="sort-filter">
+          <option value="-popularityRank">Popularity</option>
+          <option value="-averageRating">Rating</option>
+          <option value="title">Title</option>
+        </select>
+        <button onclick="searchAnime()">Search</button>
+      </div>
+    </section>
+
+    <section class="anime-grid" id="anime-grid">
+      <div class="loading">Loading anime...</div>
+    </section>
+  </div>
+
+  <footer>
+    <p><a href="about.html">About</a> | <a href="contact.html">Contact</a> | <a href="index.html">Home</a></p>
+  </footer>
+
+  <script>
+    // Helper function to get English title
+    function getEnglishTitle(anime) {
+      return anime.attributes.titles.en || anime.attributes.canonicalTitle || anime.attributes.titles.en_jp || 'Unknown Title';
+    }
+
+    // Generic function to fetch from Kitsu API
+    async function fetchKitsu(url) {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error('Kitsu API error:', error);
+        return [];
+      }
+    }
+
+    // Fetch and render anime
+    async function fetchAnime(query = '', genre = '', year = '', sort = '-popularityRank') {
+      let url = `https://kitsu.io/api/edge/anime?page[limit]=12&sort=${sort}`;
+      if (query) url += `&filter[text]=${encodeURIComponent(query)}`;
+      if (genre) url += `&filter[categories]=${encodeURIComponent(genre)}`;
+      if (year) url += `&filter[year]=${year}`;
+      const data = await fetchKitsu(url);
+      const grid = document.getElementById('anime-grid');
+      grid.innerHTML = '';
+      if (data.length === 0) {
+        grid.innerHTML = '<p>No results found.</p>';
+        return;
+      }
+      data.forEach(anime => {
+        const card = document.createElement('div');
+        card.className = 'anime-card';
+        card.innerHTML = `
+          <a href="anime-detail.html?id=${anime.id}">
+            <img src="${anime.attributes.posterImage.medium}" alt="${getEnglishTitle(anime)}">
+            <h3>${getEnglishTitle(anime)}</h3>
+            <p>Rating: ${anime.attributes.averageRating ? (anime.attributes.averageRating / 10).toFixed(1) : 'N/A'}</p>
+            <p>Year: ${anime.attributes.startDate ? anime.attributes.startDate.split('-')[0] : 'N/A'}</p>
+          </a>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Search and filter anime
+    function searchAnime() {
+      const query = document.getElementById('search-input').value;
+      const genre = document.getElementById('genre-filter').value;
+      const year = document.getElementById('year-filter').value;
+      const sort = document.getElementById('sort-filter').value;
+      fetchAnime(query, genre, year, sort);
+    }
+
+    // Load initial anime
+    fetchAnime();
+  </script>
+</body>
+</html>

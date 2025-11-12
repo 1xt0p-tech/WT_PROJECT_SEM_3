@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniSpace - Sign Up</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #333; color: white; }
+    header .logo { font-size: 1.5em; font-weight: bold; }
+    header nav a { color: white; margin: 0 15px; text-decoration: none; }
+    header .menu { cursor: pointer; }
+    .signup-section { text-align: center; padding: 40px 20px; background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 500px; margin: 20px auto; }
+    .signup-section h2 { font-size: 1.8em; margin-bottom: 20px; }
+    .signup-section form { display: flex; flex-direction: column; gap: 15px; }
+    .signup-section input { padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    .signup-section button { padding: 10px 20px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    .error { color: red; font-size: 0.9em; margin-top: -10px; }
+    footer { text-align: center; padding: 20px; background: #333; color: white; }
+    footer a { color: white; margin: 0 10px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">A AniSpace</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="browse.html">Browse</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="community.html">Community</a>
+    </nav>
+    <div class="menu">menu</div>
+  </header>
+  <div class="container">
+    <section class="signup-section">
+      <h2>Sign Up for AniSpace</h2>
+      <p>Join our community to rate, review, and discuss your favorite anime!</p>
+      <form id="signupForm" novalidate>
+        <div>
+          <input type="text" id="username" placeholder="Username" required>
+          <p class="error" id="usernameError"></p>
+        </div>
+        <div>
+          <input type="email" id="email" placeholder="Email" required>
+          <p class="error" id="emailError"></p>
+        </div>
+        <div>
+          <input type="password" id="password" placeholder="Password" required>
+          <p class="error" id="passwordError"></p>
+        </div>
+        <button type="submit">Sign Up</button>
+      </form>
+      <p>Already have an account? <a href="login.html">Log In</a></p>
+    </section>
+  </div>
+  <footer>
+    <p><a href="about.html">About</a> | <a href="contact.html">Contact</a> | <a href="index.html">Home</a></p>
+  </footer>
+  <script>
+    const form = document.getElementById('signupForm');
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const usernameError = document.getElementById('usernameError');
+    const emailError = document.getElementById('emailError');
+    const passwordError = document.getElementById('passwordError');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      let valid = true;
+
+      usernameError.textContent = '';
+      emailError.textContent = '';
+      passwordError.textContent = '';
+
+      // Fig 1.1 JS Validation: All fields are required
+      if (!usernameInput.value.trim()) {
+        usernameError.textContent = 'Username is required.';
+        valid = false;
+      }
+      if (!emailInput.value.trim()) {
+        emailError.textContent = 'Email is required.';
+        valid = false;
+      }
+      if (!passwordInput.value) {
+        passwordError.textContent = 'Password is required.';
+        valid = false;
+      }
+
+      if (!valid) return;
+
+      // Fig 1.2 JS Validation: Password Length
+      if (passwordInput.value.length < 8) {
+        passwordError.textContent = 'Password must be at least 8 characters long.';
+        valid = false;
+      }
+
+      // Fig 1.3 JS Validation: Email Pattern
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailPattern.test(emailInput.value)) {
+        emailError.textContent = 'Please enter a valid email address.';
+        valid = false;
+      }
+
+      // Fig 1.4 JS Validation: Password Pattern
+      const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!passwordPattern.test(passwordInput.value)) {
+        passwordError.textContent = 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.';
+        valid = false;
+      }
+
+      // Fig 1.5 JS Validation: Username restrictions (no spaces, length 3-20, alphanumeric + underscore)
+      const usernamePattern = /^[a-zA-Z0-9_]{3,20}$/;
+      if (!usernamePattern.test(usernameInput.value)) {
+        usernameError.textContent = 'Username must be 3-20 characters and contain only letters, numbers, or underscores.';
+        valid = false;
+      }
+
+      if (valid) {
+        alert('Sign-up successful! (Backend required to actually create account)');
+      }
+    });
+  </script>
+</body>
+</html>

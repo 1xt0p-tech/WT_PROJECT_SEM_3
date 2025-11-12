@@ -1,0 +1,134 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniSpace - Reviews</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #333; color: white; }
+    header .logo { font-size: 1.5em; font-weight: bold; }
+    header nav a { color: white; margin: 0 15px; text-decoration: none; }
+    header .menu { cursor: pointer; }
+    .reviews-section { padding: 20px; }
+    .reviews-section h2 { font-size: 1.8em; margin-bottom: 10px; }
+    .review { padding: 15px; background: white; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .review .stars { color: #f1c40f; }
+    .loading { text-align: center; padding: 20px; color: #666; }
+    footer { text-align: center; padding: 20px; background: #333; color: white; }
+    footer a { color: white; margin: 0 10px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">A AniSpace</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="browse.html">Browse</a>
+      <a href="community.html">Community</a>
+      <a href="signup.html">Sign Up</a>
+    </nav>
+    <div class="menu">menu</div>
+  </header>
+
+  <div class="container">
+    <section class="reviews-section">
+      <h2>📝 Reviews & Fan Theories</h2>
+      <div id="reviews-section">
+        <div class="loading">Loading reviews...</div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <p><a href="about.html">About</a> | <a href="contact.html">Contact</a> | <a href="index.html">Home</a></p>
+  </footer>
+
+  <script>
+    // Helper function to get English title
+    function getEnglishTitle(anime) {
+      return anime.attributes.titles.en || anime.attributes.canonicalTitle || anime.attributes.titles.en_jp || 'Unknown Title';
+    }
+
+    // Generic function to fetch from Kitsu API
+    async function fetchKitsu(url) {
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        console.error('Kitsu API error:', error);
+        return [];
+      }
+    }
+
+    // Render reviews
+    async function renderReviews() {
+      const staticReviews = [
+        { title: 'Attack on Titan Final Season Analysis', anime: 'Attack on Titan', rating: 5, user: 'AnimeFan2024', text: 'The ending of Attack on Titan brings together years of foreshadowing...' },
+        { title: 'Demon Slayer: Hidden Symbolism Theory', anime: 'Demon Slayer', rating: 5, user: 'MangaReader', text: 'The breathing techniques in Demon Slayer represent more than just combat...' },
+        { title: 'One Piece: The Will of D Explained', anime: 'One Piece', rating: 5, user: 'PirateKing', text: 'After 1000+ chapters, the mystery of the Will of D is finally becoming clear...' }
+      ];
+      const section = document.getElementById('reviews-section');
+      section.innerHTML = '';
+      for (const review of staticReviews) {
+        const data = await fetchKitsu(`https://kitsu.io/api/edge/anime?filter[text]=${encodeURIComponent(review.anime)}&page[limit]=1`);
+        const anime = data[0] || {};
+        const reviewDiv = document.createElement('div');
+        reviewDiv.className = 'review';
+        reviewDiv.innerHTML = `
+          <h3>${review.title}</h3>
+          <p><a href="anime-detail.html?id=${anime.id || ''}">${anime.attributes ? getEnglishTitle(anime) : review.anime}</a></p>
+          <div class="stars">${'★'.repeat(review.rating)}</div>
+          <p>by ${review.user}</p>
+          <p>${review.text}</p>
+        `;
+        section.appendChild(reviewDiv);
+      }
+    }
+
+    // Load reviews on page load
+    renderReviews();
+  </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AniSpace - About</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f9f9f9; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #333; color: white; }
+    header .logo { font-size: 1.5em; font-weight: bold; }
+    header nav a { color: white; margin: 0 15px; text-decoration: none; }
+    header .menu { cursor: pointer; }
+    .about-section { text-align: center; padding: 40px 20px; background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .about-section h2 { font-size: 1.8em; margin-bottom: 20px; }
+    .about-section p { font-size: 1.2em; color: #333; }
+    footer { text-align: center; padding: 20px; background: #333; color: white; }
+    footer a { color: white; margin: 0 10px; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">A AniSpace</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="browse.html">Browse</a>
+      <a href="reviews.html">Reviews</a>
+      <a href="community.html">Community</a>
+      <a href="signup.html">Sign Up</a>
+    </nav>
+    <div class="menu">menu</div>
+  </header>
+
+  <div class="container">
+    <section class="about-section">
+      <h2>About AniSpace</h2>
+      <p>AniSpace is your ultimate destination for anime discovery, reviews, and community discussions. We aim to connect anime fans worldwide, offering a platform to explore new series, share reviews and fan theories, and join a vibrant community of otaku.</p>
+      <p>Founded in 2025, AniSpace is built by fans, for fans. Join us to rate your favorite anime, discover hidden gems, and connect with others who share your passion!</p>
+      <button onclick="location.href='signup.html'" style="padding: 10px 20px; background: #4a90e2; color: white; border: none; border-radius: 5px; cursor: pointer;">Join Now</button>
+    </section>
+  </div>
+
+  <footer>
+    <p><a href="contact.html">Contact</a> | <a href="index.html">Home</a> | <a href="browse.html">Browse</a></p>
+  </footer>
+</body>
+</html>
